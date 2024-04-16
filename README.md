@@ -51,6 +51,11 @@ df = pl_access.read_table(file_path, table_name='your_table_name')
 
 This code is based heavily on [jbn's `pandas_access` library](https://github.com/jbn/pandas_access).
 
+## To Do
+
+- [ ] unit tests
+- [ ] better error messages when subsections (e.g., schema fetching) fail
+
 ## Contributing
 
 Please Star this repo. 
