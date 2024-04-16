@@ -20,7 +20,7 @@ def list_table_names(rdb_file: Union[str, os.PathLike], encoding: str = 'utf-8')
     :param encoding: The content encoding of the output of the mdb-tables command.
     :return: A list of the tables in a given database.
     """
-    tables = subprocess.check_output(['mdb-tables', "--single-column", rdb_file]).decode(encoding)
+    tables = subprocess.check_output(['mdb-tables', "--single-column", str(rdb_file)]).decode(encoding)
     return tables.strip().split("\n")
 
 
@@ -92,7 +92,7 @@ def _read_table_mdb_schema(rdb_file: Union[str, os.PathLike], table_name: str, e
         '--no-indexes',
         '--no-relations',
         '--table', table_name,
-        rdb_file]
+        str(rdb_file)]
     cmd_output = subprocess.check_output(cmd)
     cmd_output = cmd_output.decode(encoding)
     lines = cmd_output.splitlines()
@@ -163,7 +163,7 @@ def read_table(rdb_file: Union[str, os.PathLike], table_name: str, data_encoding
         else:
             pl_schema_read[col_name] = col_type
 
-    cmd = ['mdb-export', '--bin=hex', '--date-format', '%Y-%m-%d', '--datetime-format', '%Y-%m-%dT%H:%M:%S', rdb_file, table_name]
+    cmd = ['mdb-export', '--bin=hex', '--date-format', '%Y-%m-%d', '--datetime-format', '%Y-%m-%dT%H:%M:%S', str(rdb_file), table_name]
     
     # Debug:
     # data_str = subprocess.check_output(cmd).decode(data_encoding)
@@ -175,7 +175,7 @@ def read_table(rdb_file: Union[str, os.PathLike], table_name: str, data_encoding
 
     with warnings.catch_warnings():
         warnings.filterwarnings("ignore", message="Polars found a filename.*")
-        
+
         df = pl.read_csv(
             proc.stdout,
             schema=pl_schema_read,
