@@ -3,6 +3,8 @@ import subprocess
 from typing import Union
 import os
 import warnings
+import io
+import locale
 
 import polars as pl
 
@@ -134,7 +136,7 @@ def _convert_mdb_schema_to_polars_schema(mdb_schema: dict[str, pl.DataType], imp
     return pl_table_schema
 
 
-def read_table(rdb_file: Union[str, os.PathLike], table_name: str, data_encoding: str = 'utf-8', implicit_string: bool = True) -> pl.DataFrame:
+def read_table(rdb_file: Union[str, os.PathLike], table_name: str, implicit_string: bool = True) -> pl.DataFrame:
     """
     Read a MS Access database as a Polars DataFrame.
 
@@ -171,15 +173,22 @@ def read_table(rdb_file: Union[str, os.PathLike], table_name: str, data_encoding
     #     f.write(data_str)
     
     proc = subprocess.Popen(cmd, stdout=subprocess.PIPE)
-    # silence this warning: UserWarning: Polars found a filename. Ensure you pass a path to the file instead of a python file object when possible for best performance
 
+    if locale.getpreferredencoding().lower() in ['utf-8', 'utf8']:
+        csv_io = proc.stdout
+    else:
+        incoming_bytes = proc.stdout.read()
+        incoming_str = incoming_bytes.decode(locale.getpreferredencoding())
+        csv_reencoded = incoming_str.encode('utf-8')
+        csv_io = io.BytesIO(csv_reencoded)
+    
+    # silence this warning: UserWarning: Polars found a filename. Ensure you pass a path to the file instead of a python file object when possible for best performance
     with warnings.catch_warnings():
         warnings.filterwarnings("ignore", message="Polars found a filename.*")
 
         df = pl.read_csv(
-            proc.stdout,
+            csv_io,
             schema=pl_schema_read,
-            encoding=data_encoding,
             # truncate_ragged_lines=True,
         )
 
