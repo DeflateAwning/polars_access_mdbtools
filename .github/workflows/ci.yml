@@ -17,6 +17,7 @@ jobs:
       matrix:
         os: ["ubuntu-latest", "macos-latest", "windows-latest"]
         python-version: ["3.11", "3.12", "3.13"]
+        polars-version: ["0.20", "1.20", "1.30", "1.31"]
         include:
           # Methodology: Use Ubuntu for basically everything, then target
           # specific cases for the OSes and Python versions.
@@ -50,7 +51,7 @@ jobs:
       - name: Set up Python
         run: uv python install
 
-      - name: Install uv dependencies
+      - name: Install uv dependencies (Linux/macOS)
         if: runner.os == 'Linux' || runner.os == 'macOS'
         run: |
           if [ -n "${{ matrix.polars-version || '' }}" ]; then
@@ -62,6 +63,7 @@ jobs:
           fi
       - name: Install uv dependencies (Windows)
         if: runner.os == 'Windows'
+        shell: pwsh
         run: |
           if ($env:MATRIX_POLARS_VERSION) {
             Write-Host "Overriding Polars version to $env:MATRIX_POLARS_VERSION"
@@ -70,10 +72,10 @@ jobs:
           } else {
             uv sync --all-extras
           }
-        shell: pwsh
 
       - name: Run linting
         run: |
+          uv run python -c "import polars ; polars.show_versions()"
           uv run ruff format --check .
           uv run ruff check .
 
@@ -116,6 +118,10 @@ jobs:
 
           Write-Host "Extracted to $extractPath"
         shell: pwsh
+
+      - name: Verify MDBTools installation
+        run: |
+          mdb-ver --version
 
       - name: Run tests
         run: uv run pytest tests/
