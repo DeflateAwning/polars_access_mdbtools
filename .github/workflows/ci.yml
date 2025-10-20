@@ -12,12 +12,12 @@ permissions:
 
 jobs:
   build:
-    timeout-minutes: 10
+    timeout-minutes: 5
     strategy:
       matrix:
         os: ["ubuntu-latest", "macos-latest", "windows-latest"]
         python-version: ["3.11", "3.12", "3.13"]
-        polars-version: ["0.20", "1.20", "1.30", "1.31"]
+        polars-version: ["1.20", "1.30", "1.31"]
         include:
           # Methodology: Use Ubuntu for basically everything, then target
           # specific cases for the OSes and Python versions.
@@ -27,8 +27,6 @@ jobs:
             python-version: "3.12"
 
           # Polars version tests (Python 3.12 only).
-          - python-version: "3.12"
-            polars-version: "0.20"
           - python-version: "3.12"
             polars-version: "1.20"
           - python-version: "3.12"
@@ -80,6 +78,8 @@ jobs:
           uv run ruff check .
 
       - name: Run type checking
+        # Skip type checking on many old Polars versions.
+        if: matrix.polars-version != '0.20'
         run: uv run pyright .
 
       # Linux (Ubuntu)
