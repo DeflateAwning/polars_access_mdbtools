@@ -9,7 +9,7 @@ import locale
 import polars as pl
 
 
-CREATE_TABLE_RE = re.compile("CREATE TABLE \[([^]]+)\]\s+\((.*?\));",
+CREATE_TABLE_RE = re.compile(r"CREATE TABLE \[([^]]+)\]\s+\((.*?\));",
                       re.MULTILINE | re.DOTALL)
 
 DATA_TYPE_DEF_RE = re.compile(r"^\s*\[(?P<column_name>[^\]]+)\]\s*(?P<data_type>[A-Za-z]+[^,]+),?")
