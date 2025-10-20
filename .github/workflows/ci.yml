@@ -83,6 +83,9 @@ jobs:
       - name: Install MDBTools on Ubuntu
         if: runner.os == 'Linux'
         run: |
+          # Remove mandb (to speed up apt installs).
+          sudo apt-get remove -y mandb || true
+          sudo rm -f /var/lib/man-db/auto-update
           sudo apt-get update
           sudo apt-get install -y mdbtools
 
