@@ -30,14 +30,14 @@ def _path_to_cmd_str(input_path: str | Path) -> str:
     return str(input_path.resolve())
 
 
-def list_table_names(rdb_file: str | Path) -> list[str]:
+def list_table_names(db_path: str | Path) -> list[str]:
     """List the names of the tables in a given database using 'mdb-tables'.
 
-    :param rdb_file: The MS Access database file.
+    :param db_path: The MS Access database file.
     :return: A list of the tables in a given database.
     """
     tables = subprocess.check_output(  # noqa: S603
-        ["mdb-tables", "--single-column", _path_to_cmd_str(rdb_file)],  # noqa: S607
+        ["mdb-tables", "--single-column", _path_to_cmd_str(db_path)],  # noqa: S607
     ).decode()
     return tables.strip().split("\n")
 
@@ -98,13 +98,13 @@ def _extract_data_type_definitions(defs_str: str) -> dict[str, str]:
 
 
 def _read_table_mdb_schema(
-    rdb_file: str | Path,
+    db_path: str | Path,
     table_name: str,
     encoding: str = "utf-8",
 ) -> dict[str, str]:
     """Read the schema of a given database into a dictionary of the mdb-schema output.
 
-    :param rdb_file: The MS Access database file.
+    :param db_path: The MS Access database file.
     :param encoding: The schema encoding.
     :return: a dictionary of `{column_name: access_data_type}`
     """
@@ -118,7 +118,7 @@ def _read_table_mdb_schema(
         "--no-relations",
         "--table",
         table_name,
-        str(rdb_file),
+        str(db_path),
     ]
     cmd_output = subprocess.check_output(cmd)  # noqa: S603
     cmd_output = cmd_output.decode(encoding)
@@ -170,21 +170,21 @@ def _convert_mdb_schema_to_polars_schema(
 
 
 def read_table(
-    rdb_file: str | Path,
+    db_path: str | Path,
     table_name: str,
     *,
     implicit_string: bool = True,
 ) -> pl.DataFrame:
     """Read a MS Access database as a Polars DataFrame.
 
-    :param rdb_file: The MS Access database file.
+    :param db_path: The MS Access database file.
     :param table_name: The name of the table to process.
     :param implicit_string: If True, mark strings and unknown datatypes as `pl.String`.
         Otherwise, raise an error on unhandled SQL data types.
     :return: a `pl.DataFrame`
     """
     schema_encoding = "utf-8"
-    mdb_schema = _read_table_mdb_schema(rdb_file, table_name, schema_encoding)
+    mdb_schema = _read_table_mdb_schema(db_path, table_name, schema_encoding)
     pl_schema_target = _convert_mdb_schema_to_polars_schema(
         mdb_schema,
         implicit_string=implicit_string,
@@ -213,7 +213,7 @@ def read_table(
         "%Y-%m-%d",
         "--datetime-format",
         "%Y-%m-%dT%H:%M:%S",
-        _path_to_cmd_str(rdb_file),
+        _path_to_cmd_str(db_path),
         table_name,
     ]
 
