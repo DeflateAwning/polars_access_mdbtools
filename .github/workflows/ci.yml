@@ -16,6 +16,23 @@ jobs:
       matrix:
         os: ["ubuntu-latest", "macos-latest", "windows-latest"]
         python-version: ["3.11", "3.12", "3.13"]
+        include:
+          # Methodology: Use Ubuntu for basically everything, then target
+          # specific cases for the OSes and Python versions.
+          - os: macos-latest
+            python-version: "3.12"
+          - os: windows-latest
+            python-version: "3.12"
+
+          # Polars version tests (Python 3.12 only).
+          - python-version: "3.12"
+            polars-version: "0.20"
+          - python-version: "3.12"
+            polars-version: "1.20"
+          - python-version: "3.12"
+            polars-version: "1.30"
+          - python-version: "3.12"
+            polars-version: "1.31"
 
     runs-on: ${{ matrix.os }}
 
@@ -32,8 +49,15 @@ jobs:
       - name: Set up Python
         run: uv python install
 
-      - name: Install all dependencies
-        run: uv sync --all-extras
+      - name: Install dependencies
+        run: |
+          if [ -n "${{ matrix.polars-version || '' }}" ]; then
+            echo "Overriding Polars version to ${{ matrix.polars-version }}"
+            uv lock --upgrade-package polars==${{ matrix.polars-version }}
+            uv sync --all-extras
+          else
+            uv sync --all-extras
+          fi
 
       - name: Run linting
         run: |
