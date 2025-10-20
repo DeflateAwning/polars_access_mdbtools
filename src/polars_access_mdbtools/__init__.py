@@ -36,10 +36,15 @@ def list_table_names(db_path: str | Path) -> list[str]:
     :param db_path: The MS Access database file.
     :return: A list of the tables in a given database.
     """
-    tables = subprocess.check_output(  # noqa: S603
-        ["mdb-tables", "--single-column", _path_to_cmd_str(db_path)],  # noqa: S607
-    ).decode()
-    return tables.strip().split("\n")
+    tables = (
+        subprocess.check_output(  # noqa: S603
+            ["mdb-tables", "--single-column", _path_to_cmd_str(db_path)],  # noqa: S607
+        )
+        .decode()
+        .replace("\r\n", "\n")
+        .strip()
+    )
+    return tables.split("\n")
 
 
 def _convert_data_type_from_access_to_polars(  # noqa: C901, PLR0911, PLR0912
