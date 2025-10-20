@@ -49,7 +49,8 @@ jobs:
       - name: Set up Python
         run: uv python install
 
-      - name: Install dependencies
+      - name: Install uv dependencies
+        if: runner.os == 'Linux' || runner.os == 'macOS'
         run: |
           if [ -n "${{ matrix.polars-version || '' }}" ]; then
             echo "Overriding Polars version to ${{ matrix.polars-version }}"
@@ -58,6 +59,17 @@ jobs:
           else
             uv sync --all-extras
           fi
+      - name: Install uv dependencies (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          if ($env:MATRIX_POLARS_VERSION) {
+            Write-Host "Overriding Polars version to $env:MATRIX_POLARS_VERSION"
+            uv lock --upgrade-package polars==$env:MATRIX_POLARS_VERSION
+            uv sync --all-extras
+          } else {
+            uv sync --all-extras
+          }
+        shell: pwsh
 
       - name: Run linting
         run: |
