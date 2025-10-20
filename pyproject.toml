@@ -10,7 +10,7 @@ classifiers = [
   "License :: OSI Approved :: MIT License",
   "Operating System :: OS Independent",
 ]
-dependencies = ["polars>=0.20"]
+dependencies = ["polars>=1.20"]
 keywords = ["polars", "mdbtools", "access", "database", "dataframe"]
 
 [project.urls]
@@ -23,7 +23,12 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [dependency-groups]
-dev = ["pyright>=1.1.406", "pytest>=8.4.2", "ruff>=0.14.1"]
+dev = [
+    "pyright>=1.1.406",
+    "pytest>=8.4.2",
+    "requests>=2.32.5",
+    "ruff>=0.14.1",
+]
 
 [tool.pyright]
 typeCheckingMode = "strict"

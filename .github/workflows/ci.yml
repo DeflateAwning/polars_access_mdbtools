@@ -12,11 +12,12 @@ permissions:
 
 jobs:
   build:
-    timeout-minutes: 10
+    timeout-minutes: 5
     strategy:
       matrix:
         os: ["ubuntu-latest", "macos-latest", "windows-latest"]
         python-version: ["3.11", "3.12", "3.13"]
+        polars-version: ["1.20", "1.30", "1.31"]
         include:
           # Methodology: Use Ubuntu for basically everything, then target
           # specific cases for the OSes and Python versions.
@@ -26,8 +27,6 @@ jobs:
             python-version: "3.12"
 
           # Polars version tests (Python 3.12 only).
-          - python-version: "3.12"
-            polars-version: "0.20"
           - python-version: "3.12"
             polars-version: "1.20"
           - python-version: "3.12"
@@ -50,7 +49,7 @@ jobs:
       - name: Set up Python
         run: uv python install
 
-      - name: Install uv dependencies
+      - name: Install uv dependencies (Linux/macOS)
         if: runner.os == 'Linux' || runner.os == 'macOS'
         run: |
           if [ -n "${{ matrix.polars-version || '' }}" ]; then
@@ -62,6 +61,7 @@ jobs:
           fi
       - name: Install uv dependencies (Windows)
         if: runner.os == 'Windows'
+        shell: pwsh
         run: |
           if ($env:MATRIX_POLARS_VERSION) {
             Write-Host "Overriding Polars version to $env:MATRIX_POLARS_VERSION"
@@ -70,14 +70,16 @@ jobs:
           } else {
             uv sync --all-extras
           }
-        shell: pwsh
 
       - name: Run linting
         run: |
+          uv run python -c "import polars ; polars.show_versions()"
           uv run ruff format --check .
           uv run ruff check .
 
       - name: Run type checking
+        # Skip type checking on many old Polars versions.
+        if: matrix.polars-version != '0.20'
         run: uv run pyright .
 
       # Linux (Ubuntu)
@@ -102,20 +104,34 @@ jobs:
         if: runner.os == 'Windows'
         run: |
           $url = "https://github.com/lsgunth/mdbtools-win/archive/refs/tags/v1.0.0.zip"
-          $zipPath = "$env:RUNNER_TEMP\mdbtools-win.zip"
-          $extractPath = "$env:GITHUB_WORKSPACE\path"
+          $zipPath = "$env:RUNNER_TEMP\mdbtools-win-1.0.0.zip"
+          $extractRoot = "$env:RUNNER_TEMP\mdbtools"
+          $installPath = "$env:GITHUB_WORKSPACE\mdbtools"
 
           # Download the zip file
           Invoke-WebRequest -Uri $url -OutFile $zipPath
 
-          # Create the target directory if it doesn't exist
-          New-Item -ItemType Directory -Force -Path $extractPath | Out-Null
+          # Create the extraction root and install directories
+          New-Item -ItemType Directory -Force -Path $extractRoot | Out-Null
+          New-Item -ItemType Directory -Force -Path $installPath | Out-Null
 
           # Extract the zip file
-          Expand-Archive -Path $zipPath -DestinationPath $extractPath -Force
+          Expand-Archive -Path $zipPath -DestinationPath $extractRoot -Force
 
-          Write-Host "Extracted to $extractPath"
+          # Move contents from the subfolder (mdbtools-win-1.0.0) to install path
+          $innerDir = Join-Path $extractRoot "mdbtools-win-1.0.0"
+          Copy-Item -Path (Join-Path $innerDir "*") -Destination $installPath -Recurse -Force
+
+          # Add install path to PATH
+          Write-Host "Adding $installPath to PATH"
+          echo "$installPath" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+
+          Write-Host "MDBTools installed at $installPath"
         shell: pwsh
+
+      - name: Verify MDBTools installation
+        run: |
+          mdb-ver --version
 
       - name: Run tests
         run: uv run pytest tests/
