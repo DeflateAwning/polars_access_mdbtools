@@ -32,5 +32,11 @@ typeCheckingMode = "strict"
 select = ["ALL"]
 ignore = [
   "FIX002",
-  "TD003", # Needs issue link.
+  "TD003",  # Needs issue link.
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*.py" = [
+  "D103", # Missing docstring in public function.
+  "S101", # Allows asserts.
 ]

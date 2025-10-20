@@ -12,6 +12,7 @@ permissions:
 
 jobs:
   build:
+    timeout-minutes: 10
     strategy:
       matrix:
         os: ["ubuntu-latest", "macos-latest", "windows-latest"]
@@ -49,7 +50,8 @@ jobs:
       - name: Set up Python
         run: uv python install
 
-      - name: Install dependencies
+      - name: Install uv dependencies
+        if: runner.os == 'Linux' || runner.os == 'macOS'
         run: |
           if [ -n "${{ matrix.polars-version || '' }}" ]; then
             echo "Overriding Polars version to ${{ matrix.polars-version }}"
@@ -58,6 +60,17 @@ jobs:
           else
             uv sync --all-extras
           fi
+      - name: Install uv dependencies (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          if ($env:MATRIX_POLARS_VERSION) {
+            Write-Host "Overriding Polars version to $env:MATRIX_POLARS_VERSION"
+            uv lock --upgrade-package polars==$env:MATRIX_POLARS_VERSION
+            uv sync --all-extras
+          } else {
+            uv sync --all-extras
+          }
+        shell: pwsh
 
       - name: Run linting
         run: |
@@ -71,6 +84,9 @@ jobs:
       - name: Install MDBTools on Ubuntu
         if: runner.os == 'Linux'
         run: |
+          # Remove mandb (to speed up apt installs).
+          sudo apt-get remove -y mandb || true
+          sudo rm -f /var/lib/man-db/auto-update
           sudo apt-get update
           sudo apt-get install -y mdbtools
 
@@ -81,21 +97,25 @@ jobs:
           brew update
           brew install mdbtools
 
-      # Windows (MSYS2 + build from source)
+      # Windows (download from build at https://github.com/lsgunth/mdbtools-win)
       - name: Install MDBTools on Windows
         if: runner.os == 'Windows'
-        shell: bash
         run: |
-          choco install -y msys2
-          C:\tools\msys64\usr\bin\bash -lc "
-            pacman -Sy --noconfirm git base-devel mingw-w64-x86_64-toolchain automake autoconf libtool flex bison
-            git clone https://github.com/mdbtools/mdbtools.git
-            cd mdbtools
-            autoreconf -i -f
-            ./configure --host=x86_64-w64-mingw32 --disable-shared --enable-static
-            make -j$(nproc)
-            make install
-          "
+          $url = "https://github.com/lsgunth/mdbtools-win/archive/refs/tags/v1.0.0.zip"
+          $zipPath = "$env:RUNNER_TEMP\mdbtools-win.zip"
+          $extractPath = "$env:GITHUB_WORKSPACE\path"
+
+          # Download the zip file
+          Invoke-WebRequest -Uri $url -OutFile $zipPath
+
+          # Create the target directory if it doesn't exist
+          New-Item -ItemType Directory -Force -Path $extractPath | Out-Null
+
+          # Extract the zip file
+          Expand-Archive -Path $zipPath -DestinationPath $extractPath -Force
+
+          Write-Host "Extracted to $extractPath"
+        shell: pwsh
 
       - name: Run tests
         run: uv run pytest tests/
