@@ -30,6 +30,11 @@ dev = [
     "ruff>=0.14.1",
 ]
 
+[tool.hatch.build.targets.wheel]
+include = [
+  "polars_access_mdbtools/bin/**",
+]
+
 [tool.pyright]
 typeCheckingMode = "strict"
 

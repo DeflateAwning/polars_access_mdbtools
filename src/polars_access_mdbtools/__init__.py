@@ -3,10 +3,13 @@
 import io
 import locale
 import os
+import platform
 import re
+import shutil
 import subprocess
 import warnings
 from pathlib import Path
+from typing import Literal
 
 import polars as pl
 from polars._typing import PolarsDataType
@@ -19,6 +22,25 @@ CREATE_TABLE_RE = re.compile(
 DATA_TYPE_DEF_RE = re.compile(
     r"^\s*\[(?P<column_name>[^\]]+)\]\s*(?P<data_type>[A-Za-z]+[^,]+),?",
 )
+
+MdbToolsBinaryNameLiteral = Literal["mdb-ver", "mdb-tables", "mdb-schema", "mdb-export"]
+
+
+def _get_mdb_binary(name: MdbToolsBinaryNameLiteral) -> str:
+    system = platform.system().lower()
+    base_dir = Path(__file__).parent / "bin" / system
+    exe = base_dir / (name + (".exe" if system == "windows" else ""))
+    if exe.exists():
+        return str(exe)
+
+    if shutil.which(name) is None:
+        msg = (
+            f"Bundled binary for {name} not found. Also searched path. "
+            "Install mdbtools binaries, or open a GitHub Issue for your platform."
+        )
+        raise RuntimeError(msg)
+
+    return name  # Fallback to system-installed binary.
 
 
 def _path_to_cmd_str(input_path: str | Path) -> str:
@@ -39,7 +61,11 @@ def list_table_names(db_path: str | Path) -> list[str]:
     """
     tables = (
         subprocess.check_output(  # noqa: S603
-            ["mdb-tables", "--single-column", _path_to_cmd_str(db_path)],  # noqa: S607
+            [
+                _get_mdb_binary("mdb-tables"),
+                "--single-column",
+                _path_to_cmd_str(db_path),
+            ],
         )
         .decode(locale.getpreferredencoding())
         .replace("\r\n", "\n")
@@ -113,7 +139,7 @@ def _read_table_mdb_schema(
     :return: a dictionary of `{column_name: access_data_type}`
     """
     cmd = [
-        "mdb-schema",
+        _get_mdb_binary("mdb-schema"),
         # TODO(DeflateAwning): Could add these as arguments.
         "--no-default-values",
         "--no-not_empty",
@@ -224,7 +250,7 @@ def read_table(
             pl_schema_read[col_name] = col_type
 
     cmd = [
-        "mdb-export",
+        _get_mdb_binary("mdb-export"),
         "--bin=hex",
         "--date-format",
         "%Y-%m-%d",
