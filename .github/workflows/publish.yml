@@ -3,7 +3,7 @@ name: Publish to PyPI
 on:
   release:
     types: [published]
-  workflow_dispatch: # Manual trigger
+  workflow_dispatch:
 
 jobs:
   build:
@@ -23,8 +23,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      # --- Install system dependencies for mdbtools ---
-      - name: Install build dependencies
+      - name: Install mdtools build dependencies
         run: |
           if [[ "$RUNNER_OS" == "Linux" ]]; then
             # Remove mandb (to speed up apt installs).
@@ -61,34 +60,62 @@ jobs:
           echo "Built mdbtools binaries:"
           du -ah src/polars_access_mdbtools/bin/
 
-      - name: Build Python package
-        run: uv build
+      - name: Build wheel
+        run: uv build --wheel
 
-      - name: Upload built wheel
+      - name: Upload wheel artifact
         uses: actions/upload-artifact@v4
         with:
           name: wheel-${{ runner.os }}
           path: dist/*.whl
 
+  # Separate sdist build (only on Linux)
+  sdist:
+    name: Build sdist
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.12"
+
+      - name: Build sdist
+        run: uv build --sdist
+
+      - name: Upload sdist artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sdist
+          path: dist/*.tar.gz
+
   publish:
     name: Publish to PyPI
-    needs: build
+    needs: [build, sdist]
     runs-on: ubuntu-latest
     permissions:
       id-token: write
       contents: read
 
     steps:
-      - name: Download all built wheels
+      - name: Download all built artifacts
         uses: actions/download-artifact@v4
         with:
           path: dist
+          merge-multiple: true  # Flattens wheel and sdist files.
+
+      - name: Show contents to publish
+        run: ls -lh dist/
 
       - name: Install uv
         uses: astral-sh/setup-uv@v5
         with:
           python-version: "3.12"
 
-      # --- Publish all platform wheels to PyPI via OIDC ---
       - name: Publish to PyPI
         run: uv publish --trusted-publishing always
