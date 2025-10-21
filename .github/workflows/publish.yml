@@ -94,9 +94,49 @@ jobs:
           name: sdist
           path: dist/*.tar.gz
 
-  publish:
+  test-dist:
     name: Publish to PyPI
     needs: [build, sdist]
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          
+      - name: Download all built artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true  # Flattens wheel and sdist files.
+
+      - name: Show contents to publish
+        run: ls -lh dist/
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.12"
+
+      - name: Test built distribution
+        run: |
+          echo "Setting up test environment..."
+          uv venv .venv
+          source .venv/bin/activate
+          echo "Installing wheel from dist/"
+          uv pip install dist/*.whl
+          echo "Installing test dependencies..."
+          uv pip install pytest
+          echo "Running tests..."
+
+          pytest -v tests/
+
+  publish:
+    name: Publish to PyPI
+    needs: [build, sdist, test-dist]
     runs-on: ubuntu-latest
     permissions:
       id-token: write
@@ -118,4 +158,5 @@ jobs:
           python-version: "3.12"
 
       - name: Publish to PyPI
+        if: github.event_name == 'release'  # Only run when triggered by a release.
         run: uv publish --trusted-publishing always
