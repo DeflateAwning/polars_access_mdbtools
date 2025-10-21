@@ -31,9 +31,13 @@ dev = [
 ]
 
 [tool.hatch.build.targets.wheel]
-include = [
-  "polars_access_mdbtools/bin/**",
-]
+include = ["polars_access_mdbtools/bin/**"]
+
+[tool.hatch.build.hooks.custom]
+dependencies = ["hatchling"]
+
+[tool.hatch.build.hooks.custom.scripts]
+build = "python build_mdbtools.py"
 
 [tool.pyright]
 typeCheckingMode = "strict"
@@ -49,4 +53,9 @@ ignore = [
 "tests/**/*.py" = [
   "D103", # Missing docstring in public function.
   "S101", # Allows asserts.
+]
+
+"build_mdbtools.py" = [
+  "T201", # Allow prints.
+  "S603", # Allow subprocess.
 ]

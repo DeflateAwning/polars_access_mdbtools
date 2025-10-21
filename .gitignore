@@ -1,3 +1,5 @@
+build-mdbtools/
+
 .venv
 .ruff_cache
 
