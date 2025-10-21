@@ -59,7 +59,7 @@ jobs:
       - name: Show mdbtools build products
         run: |
           echo "Built mdbtools binaries:"
-          ls -l polars_access_mdbtools/mdbtools_build/bin/
+          du -ah src/polars_access_mdbtools/bin/
 
       - name: Build Python package
         run: uv build
