@@ -9,6 +9,7 @@ from polars.testing import assert_frame_equal
 from polars_access_mdbtools import read_table
 
 
+@pytest.mark.filterwarnings("error")  # Make sure no warnings are raised.
 def test_can_read_all_tables_in_sample_db_1(sample_db_1: Path) -> None:
     """Test reading all tables in sample_db_1. Check row counts."""
     for table_name, expected_rows in [
@@ -30,6 +31,7 @@ def test_can_read_all_tables_in_sample_db_1(sample_db_1: Path) -> None:
         )
 
 
+@pytest.mark.filterwarnings("error")  # Make sure no warnings are raised.
 def test_read_nonexistent_table_raises_value_error(sample_db_1: Path) -> None:
     """Test that reading a nonexistent table raises ValueError."""
     nonexistent_table_name = "NONEXISTENT_TABLE"
@@ -40,6 +42,7 @@ def test_read_nonexistent_table_raises_value_error(sample_db_1: Path) -> None:
         read_table(sample_db_1, nonexistent_table_name)
 
 
+@pytest.mark.filterwarnings("error")  # Make sure no warnings are raised.
 def test_reading_specific_table_1a(sample_db_1: Path) -> None:
     """Test reading a specific table and checking its schema."""
     df = read_table(sample_db_1, table_name="USysRibbons")
@@ -64,6 +67,7 @@ def test_reading_specific_table_1a(sample_db_1: Path) -> None:
     assert_frame_equal(df, df_expected)
 
 
+@pytest.mark.filterwarnings("error")  # Make sure no warnings are raised.
 def test_reading_specific_table_2a(sample_db_2: Path) -> None:
     """Test reading a specific table and checking its schema.
 

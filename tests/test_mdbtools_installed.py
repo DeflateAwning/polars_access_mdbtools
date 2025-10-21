@@ -5,6 +5,7 @@ import subprocess
 import pytest
 
 
+@pytest.mark.filterwarnings("error")  # Make sure no warnings are raised.
 def test_mdbtools_installed() -> None:
     """Test that mdbtools commands are accessible."""
     try:

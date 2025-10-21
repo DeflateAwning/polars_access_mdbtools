@@ -234,36 +234,35 @@ def read_table(
         table_name,
     ]
 
-    proc = subprocess.Popen(cmd, stdout=subprocess.PIPE)  # noqa: S603
+    with subprocess.Popen(cmd, stdout=subprocess.PIPE) as proc:  # noqa: S603
+        if proc.stdout is None:
+            msg = "Failed to read from mdb-export subprocess stdout."
+            raise RuntimeError(msg)
 
-    if proc.stdout is None:
-        msg = "Failed to read from mdb-export subprocess stdout."
-        raise RuntimeError(msg)
+        if locale.getpreferredencoding().lower() in {"utf-8", "utf8"}:
+            csv_io = proc.stdout
+        else:
+            incoming_bytes = proc.stdout.read()
+            incoming_str = incoming_bytes.decode(locale.getpreferredencoding())
+            csv_re_encoded = incoming_str.encode("utf-8")
 
-    if locale.getpreferredencoding().lower() in {"utf-8", "utf8"}:
-        csv_io = proc.stdout
-    else:
-        incoming_bytes = proc.stdout.read()
-        incoming_str = incoming_bytes.decode(locale.getpreferredencoding())
-        csv_re_encoded = incoming_str.encode("utf-8")
+            # If on Windows, replace CRLF with LF.
+            if os.name == "nt":
+                csv_re_encoded = csv_re_encoded.replace(b"\r\n", b"\n")
 
-        # If on Windows, replace CRLF with LF.
-        if os.name == "nt":
-            csv_re_encoded = csv_re_encoded.replace(b"\r\n", b"\n")
+            csv_io = io.BytesIO(csv_re_encoded)
 
-        csv_io = io.BytesIO(csv_re_encoded)
+        # Silence this warning:
+        # UserWarning: Polars found a filename.
+        # Ensure you pass a path to the file instead of a python file object when
+        # possible for best performance.
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", message="Polars found a filename.*")
 
-    # Silence this warning:
-    # UserWarning: Polars found a filename.
-    # Ensure you pass a path to the file instead of a python file object when possible
-    # for best performance
-    with warnings.catch_warnings():
-        warnings.filterwarnings("ignore", message="Polars found a filename.*")
-
-        df = pl.read_csv(
-            csv_io,
-            schema=pl_schema_read,
-        )
+            df = pl.read_csv(
+                csv_io,
+                schema=pl_schema_read,
+            )
 
     # Convert binary columns to hex.
     df = df.with_columns(
