@@ -2,6 +2,8 @@
 
 from pathlib import Path
 
+import pytest
+
 from polars_access_mdbtools import read_table
 
 
@@ -24,3 +26,13 @@ def test_can_read_all_tables_in_sample_db_1(sample_db_1: Path) -> None:
         assert df.height == expected_rows, (
             f"Table {table_name} should have {expected_rows} rows, but had {df.height}."
         )
+
+
+def test_read_nonexistent_table_raises_value_error(sample_db_1: Path) -> None:
+    """Test that reading a nonexistent table raises ValueError."""
+    nonexistent_table_name = "NONEXISTENT_TABLE"
+    with pytest.raises(
+        ValueError,
+        match=f'Table "{nonexistent_table_name}" not found in database',
+    ):
+        read_table(sample_db_1, nonexistent_table_name)

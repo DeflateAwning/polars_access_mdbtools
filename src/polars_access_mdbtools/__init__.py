@@ -125,17 +125,31 @@ def _read_table_mdb_schema(
         table_name,
         str(db_path),
     ]
-    cmd_output = subprocess.check_output(cmd)  # noqa: S603
+    try:
+        cmd_output = subprocess.check_output(cmd, stderr=subprocess.STDOUT)  # noqa: S603
+    except subprocess.CalledProcessError as e:
+        # Remap "table not found" problem.
+        if b"No table named" in e.output:
+            msg = f'Table "{table_name}" not found in database.'
+            raise ValueError(msg) from e
+        raise
+
     cmd_output = cmd_output.decode(encoding)
     lines = cmd_output.splitlines()
     schema_ddl = "\n".join(line for line in lines if line and not line.startswith("-"))
 
     create_table_matches = CREATE_TABLE_RE.findall(schema_ddl)
+
+    # These failures are likely more related to implementation issues, and less
+    # about the table being missing.
     if len(create_table_matches) == 0:
         msg = f'Table schema "{table_name}" not found in "mdb-schema" output.'
         raise ValueError(msg)
     if len(create_table_matches) > 1:
-        msg = f'Multiple table schemas found for "{table_name}" in "mdb-schema" output.'
+        msg = (
+            f'Multiple table schemas found for "{table_name}" in "mdb-schema" output. '
+            "Logical error."
+        )
         raise ValueError(msg)
 
     table_name_mdb, defs = create_table_matches[0]
