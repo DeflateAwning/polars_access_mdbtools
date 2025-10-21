@@ -75,13 +75,22 @@ def build_mdbtools() -> None:
     ]
     print(f"Ensure build deps installed ({', '.join(deps)}).")
 
-    # Ensure configure script is present.
-    # Not present in GitHub files, but present in release zip.
-    if not (BUILD_DIR / "configure").exists():
-        msg = "Missing configure script after extraction."
+    if system == "darwin":
+        # macOS specific env tweaks.
+        # Ensure configure script is present.
+        # Not present in GitHub files, but present in release zip.
+        if not (BUILD_DIR / "configure").exists():
+            msg = "Missing configure script after extraction."
+            raise RuntimeError(msg)
+        (BUILD_DIR / "configure").chmod(0o755)  # Make it executable.
+        print("✅ configure script found.")
+
+    elif system == "linux":
+        run(["./autoreconf", "-f", "-i"], cwd=BUILD_DIR, env=env)
+        print("✅ autoreconf completed.")
+    else:
+        msg = f"Unsupported system: {system}"
         raise RuntimeError(msg)
-    (BUILD_DIR / "configure").chmod(0o755)  # Make it executable.
-    print("✅ configure script found.")
 
     # Configure.
     configure_args = [
