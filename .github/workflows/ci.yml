@@ -15,27 +15,49 @@ jobs:
     timeout-minutes: 5
     strategy:
       matrix:
-        os: ["ubuntu-latest", "macos-latest", "windows-latest"]
-        python-version: ["3.11", "3.12", "3.13"]
-        polars-version: ["1.20", "1.30", "1.31"]
+        # os: ["ubuntu-latest", "macos-latest", "windows-latest"]
+        # python-version: ["3.11", "3.12", "3.13"]
+        # polars-version: ["1.20", "1.30", "1.31", "1.32", "1.33", "1.34"]
         include:
-          # Methodology: Use Ubuntu for basically everything, then target
-          # specific cases for the OSes and Python versions.
-          - os: macos-latest
+          # Base case
+          - os: ubuntu-latest
             python-version: "3.12"
-          - os: windows-latest
-            python-version: "3.12"
-
-          # Polars version tests (Python 3.12 only).
-          - python-version: "3.12"
-            polars-version: "1.20"
-          - python-version: "3.12"
-            polars-version: "1.30"
-          - python-version: "3.12"
             polars-version: "1.31"
 
-    runs-on: ${{ matrix.os }}
+          # OS variations
+          - os: macos-latest
+            python-version: "3.12"
+            polars-version: "1.31"
+          - os: windows-latest
+            python-version: "3.12"
+            polars-version: "1.31"
 
+          # Python variations
+          - os: ubuntu-latest
+            python-version: "3.11"
+            polars-version: "1.31"
+          - os: ubuntu-latest
+            python-version: "3.13"
+            polars-version: "1.31"
+
+          # Polars variations
+          - os: ubuntu-latest
+            python-version: "3.12"
+            polars-version: "1.20"
+          - os: ubuntu-latest
+            python-version: "3.12"
+            polars-version: "1.30"
+          - os: ubuntu-latest
+            python-version: "3.12"
+            polars-version: "1.32"
+          - os: ubuntu-latest
+            python-version: "3.12"
+            polars-version: "1.33"
+          - os: ubuntu-latest
+            python-version: "3.12"
+            polars-version: "1.34"
+
+    runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -78,8 +100,8 @@ jobs:
           uv run ruff check .
 
       - name: Run type checking
-        # Skip type checking on many old Polars versions.
-        if: matrix.polars-version != '0.20'
+        # Skip type checking on certain versions.
+        if: matrix.polars-version != '1.33' && matrix.polars-version != '1.34'
         run: uv run pyright .
 
       # Linux (Ubuntu)
