@@ -3,11 +3,15 @@
 Follows official build guide: https://github.com/mdbtools/mdbtools
 """
 
+import io
 import os
 import platform
 import shutil
 import subprocess
+import zipfile
 from pathlib import Path
+
+import requests
 
 ROOT = Path(__file__).parent
 BIN_DIR = ROOT / "src" / "polars_access_mdbtools" / "bin"
@@ -16,7 +20,9 @@ if not BIN_DIR.is_dir():
     raise RuntimeError(msg)
 
 BUILD_DIR = ROOT / "build-mdbtools"
-REPO_URL = "https://github.com/mdbtools/mdbtools.git"
+RELEASE_ZIP_URL = (
+    "https://github.com/mdbtools/mdbtools/releases/download/v1.0.1/mdbtools-1.0.1.zip"
+)
 
 TARGET_BINARIES = ["mdb-ver", "mdb-export", "mdb-schema", "mdb-tables"]
 
@@ -40,7 +46,18 @@ def build_mdbtools() -> None:
 
     # Clean previous build
     shutil.rmtree(BUILD_DIR, ignore_errors=True)
-    run(["git", "clone", "--depth=1", REPO_URL, str(BUILD_DIR)])
+
+    # Download latest release.
+    with requests.get(RELEASE_ZIP_URL, stream=True, timeout=30) as r:
+        r.raise_for_status()
+        with zipfile.ZipFile(io.BytesIO(r.content)) as zip_file:
+            zip_file.extractall(BUILD_DIR)
+
+    # Move extracted files up one level.
+    extracted_subdir = BUILD_DIR / "mdbtools-1.0.1"
+    for item in extracted_subdir.iterdir():
+        shutil.move(str(item), BUILD_DIR)
+    extracted_subdir.rmdir()
 
     env = os.environ.copy()
     env.setdefault("CFLAGS", "-O2")
@@ -58,10 +75,15 @@ def build_mdbtools() -> None:
     ]
     print(f"Ensure build deps installed ({', '.join(deps)}).")
 
-    # Generate configure script if building from git
-    run(["autoreconf", "-i", "-f"], cwd=BUILD_DIR)
+    # Ensure configure script is present.
+    # Not present in GitHub files, but present in release zip.
+    if not (BUILD_DIR / "configure").exists():
+        msg = "Missing configure script after extraction."
+        raise RuntimeError(msg)
+    (BUILD_DIR / "configure").chmod(0o755)  # Make it executable.
+    print("✅ configure script found.")
 
-    # Configure
+    # Configure.
     configure_args = [
         "./configure",
         "--disable-glib",  # to avoid system GLib dependency
@@ -70,8 +92,8 @@ def build_mdbtools() -> None:
     ]
     run(configure_args, cwd=BUILD_DIR, env=env)
 
-    # Build
-    run(["make", "-j"], cwd=BUILD_DIR)
+    # Build.
+    run(["make"], cwd=BUILD_DIR)
 
     # Locate binaries
     built_utils = BUILD_DIR / "src" / "util"
