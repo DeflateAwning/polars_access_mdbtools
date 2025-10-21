@@ -41,7 +41,7 @@ def list_table_names(db_path: str | Path) -> list[str]:
         subprocess.check_output(  # noqa: S603
             ["mdb-tables", "--single-column", _path_to_cmd_str(db_path)],  # noqa: S607
         )
-        .decode()
+        .decode(locale.getpreferredencoding())
         .replace("\r\n", "\n")
         .strip()
     )
@@ -106,12 +106,10 @@ def _extract_data_type_definitions(defs_str: str) -> dict[str, str]:
 def _read_table_mdb_schema(
     db_path: str | Path,
     table_name: str,
-    encoding: str = "utf-8",
 ) -> dict[str, str]:
     """Read the schema of a given database into a dictionary of the mdb-schema output.
 
     :param db_path: The MS Access database file.
-    :param encoding: The schema encoding.
     :return: a dictionary of `{column_name: access_data_type}`
     """
     cmd = [
@@ -135,7 +133,7 @@ def _read_table_mdb_schema(
             raise ValueError(msg) from e
         raise
 
-    cmd_output = cmd_output.decode(encoding)
+    cmd_output = cmd_output.decode(locale.getpreferredencoding())
     lines = cmd_output.splitlines()
     schema_ddl = "\n".join(line for line in lines if line and not line.startswith("-"))
 
@@ -203,8 +201,7 @@ def read_table(
         Otherwise, raise an error on unhandled SQL data types.
     :return: a `pl.DataFrame`
     """
-    schema_encoding = "utf-8"
-    mdb_schema = _read_table_mdb_schema(db_path, table_name, schema_encoding)
+    mdb_schema = _read_table_mdb_schema(db_path, table_name)
     pl_schema_target = _convert_mdb_schema_to_polars_schema(
         mdb_schema,
         implicit_string=implicit_string,
