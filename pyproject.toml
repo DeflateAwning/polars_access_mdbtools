@@ -31,7 +31,10 @@ dev = [
 ]
 
 [tool.hatch.build.targets.wheel]
-include = ["polars_access_mdbtools/bin/**"]
+# Explicitly include the built binary files in the wheel.
+# Windows `/bin/windows/` is always present (executables stored in version control).
+# Mac/Linux `/bin/macos/` or `/bin/linux/` all get built in the GitHub Actions workflow.
+include = ["src/polars_access_mdbtools/**"]
 
 # This build script is called in the GitHub Actions workflow to build mdbtools.
 # [tool.hatch.build.hooks.custom]

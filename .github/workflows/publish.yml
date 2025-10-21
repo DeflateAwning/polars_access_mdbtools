@@ -95,7 +95,7 @@ jobs:
           path: dist/*.tar.gz
 
   test-dist:
-    name: Publish to PyPI
+    name: Test built distributions
     needs: [build, sdist]
     runs-on: ubuntu-latest
     permissions:
