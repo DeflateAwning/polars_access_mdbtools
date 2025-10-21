@@ -34,7 +34,7 @@ dev = [
 # Explicitly include the built binary files in the wheel.
 # Windows `/bin/windows/` is always present (executables stored in version control).
 # Mac/Linux `/bin/macos/` or `/bin/linux/` all get built in the GitHub Actions workflow.
-include = ["src/polars_access_mdbtools/**"]
+include = ["src/polars_access_mdbtools/**/*"] # FIXME: This makes it so that the install breaks.
 # Mark as non-pure so each OS gets its own wheel tag (manylinux, macos, etc.).
 pure-python = false
 
@@ -43,6 +43,10 @@ include = ["src/polars_access_mdbtools/**", "build_mdbtools.py", "README.md", "L
 
 [tool.hatch.metadata]
 allow-direct-references = true
+
+# [tool.hatch.build.hooks.build_ext] # Could try this, but doesn't work.
+# force = true
+
 
 # This build script is called in the GitHub Actions workflow to build mdbtools.
 # [tool.hatch.build.hooks.custom]
