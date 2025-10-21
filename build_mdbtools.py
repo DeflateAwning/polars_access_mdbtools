@@ -88,6 +88,7 @@ def build_mdbtools() -> None:
         "./configure",
         "--disable-glib",  # to avoid system GLib dependency
         "--disable-shared",
+        "--disable-man",  # Disable manuals (otherwise it complains).
         "--enable-static",
     ]
     run(configure_args, cwd=BUILD_DIR, env=env)
