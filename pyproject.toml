@@ -1,6 +1,6 @@
 [project]
 name = "polars_access_mdbtools"
-version = "0.0.2"
+version = "0.1.0"
 authors = [{ name = "DeflateAwning" }]
 description = "A library for reading tables from an Access database into Polars dataframes, using mdbtools"
 readme = "README.md"
