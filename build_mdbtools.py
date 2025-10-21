@@ -86,7 +86,7 @@ def build_mdbtools() -> None:
         print("✅ configure script found.")
 
     elif system == "linux":
-        run(["./autoreconf", "-f", "-i"], cwd=BUILD_DIR, env=env)
+        run(["autoreconf", "-f", "-i"], cwd=BUILD_DIR, env=env)
         print("✅ autoreconf completed.")
     else:
         msg = f"Unsupported system: {system}"
