@@ -41,7 +41,7 @@ def list_table_names(db_path: str | Path) -> list[str]:
         subprocess.check_output(  # noqa: S603
             ["mdb-tables", "--single-column", _path_to_cmd_str(db_path)],  # noqa: S607
         )
-        .decode()
+        .decode(locale.getpreferredencoding())
         .replace("\r\n", "\n")
         .strip()
     )
@@ -106,12 +106,10 @@ def _extract_data_type_definitions(defs_str: str) -> dict[str, str]:
 def _read_table_mdb_schema(
     db_path: str | Path,
     table_name: str,
-    encoding: str = "utf-8",
 ) -> dict[str, str]:
     """Read the schema of a given database into a dictionary of the mdb-schema output.
 
     :param db_path: The MS Access database file.
-    :param encoding: The schema encoding.
     :return: a dictionary of `{column_name: access_data_type}`
     """
     cmd = [
