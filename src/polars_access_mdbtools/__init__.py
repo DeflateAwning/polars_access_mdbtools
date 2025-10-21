@@ -2,6 +2,7 @@
 
 import io
 import locale
+import os
 import re
 import subprocess
 import warnings
@@ -248,6 +249,11 @@ def read_table(
         incoming_bytes = proc.stdout.read()
         incoming_str = incoming_bytes.decode(locale.getpreferredencoding())
         csv_re_encoded = incoming_str.encode("utf-8")
+
+        # If on Windows, replace CRLF with LF.
+        if os.name == "nt":
+            csv_re_encoded = csv_re_encoded.replace(b"\r\n", b"\n")
+
         csv_io = io.BytesIO(csv_re_encoded)
 
     # Silence this warning:
