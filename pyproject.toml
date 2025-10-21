@@ -36,8 +36,9 @@ include = ["polars_access_mdbtools/bin/**"]
 [tool.hatch.build.hooks.custom]
 dependencies = ["hatchling"]
 
-[tool.hatch.build.hooks.custom.scripts]
-build = "python build_mdbtools.py"
+# This build script is called in the GitHub Actions workflow to build mdbtools.
+# [tool.hatch.build.hooks.custom.scripts]
+# build = "python build_mdbtools.py"
 
 [tool.pyright]
 typeCheckingMode = "strict"
