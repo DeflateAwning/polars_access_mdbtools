@@ -2,7 +2,9 @@
 
 from pathlib import Path
 
+import polars as pl
 import pytest
+from polars.testing import assert_frame_equal
 
 from polars_access_mdbtools import read_table
 
@@ -36,3 +38,28 @@ def test_read_nonexistent_table_raises_value_error(sample_db_1: Path) -> None:
         match=f'Table "{nonexistent_table_name}" not found in database',
     ):
         read_table(sample_db_1, nonexistent_table_name)
+
+
+def test_reading_specific_table_1a(sample_db_1: Path) -> None:
+    """Test reading a specific table and checking its schema."""
+    df = read_table(sample_db_1, table_name="USysRibbons")
+
+    df_expected = pl.DataFrame(
+        {
+            "RibbonId": [1, 6],
+            "RibbonName": ["rbnReportView", "rbnMainMenu"],
+            "RibbonXML": [
+                '<customUI xmlns="http://schemas.microsoft.com/office/2006/01/customui">\r\n <ribbon startFromScratch="true">\r\n  <officeMenu>\r\n   <button idMso="FileCompactAndRepairDatabase" insertBeforeMso ="FileCloseDatabase" />\r\n   <button idMso="FileOpenDatabase" visible="false"/>\r\n   <button idMso="FileNewDatabase" visible="false"/>\r\n   <splitButton idMso="FileSaveAsMenuAccess" visible="false" />\r\n  </officeMenu>\r\n  <tabs>\r\n    <tab id="tabHome" label="Home">\r\n\r\n       <group id="grpClose" label="Close" >\r\n          <button idMso="PrintPreviewClose" \r\n             size="large" />\r\n       </group>\r\n\r\n       <group id="grpData" label="Data" >\r\n          <button idMso="PublishToPdfOrEdoc"\r\n             size="large" />\r\n       </group>\r\n\r\n       <group id="grpZoom" label="Zoom" >\r\n          <splitButton idMso="PrintPreviewZoomMenu"\r\n             size="large" />\r\n       </group>\r\n\r\n       <group id="grpPrint" label="Print" >\r\n          <button idMso="PrintDialogAccess"\r\n             size="large" />\r\n       </group>\r\n\r\n    </tab>\r\n  </tabs>\r\n </ribbon>\r\n</customUI>',  # noqa: E501
+                '<customUI xmlns="http://schemas.microsoft.com/office/2006/01/customui">\r\n <ribbon startFromScratch="true">\r\n  <officeMenu>\r\n   <button idMso="FileCompactAndRepairDatabase" insertBeforeMso ="FileCloseDatabase" />\r\n   <button idMso="FileOpenDatabase" visible="false"/>\r\n   <button idMso="FileNewDatabase" visible="false"/>\r\n   <splitButton idMso="FileSaveAsMenuAccess" visible="false" />\r\n  </officeMenu>\r\n  <tabs>\r\n   <tab id="tabHome" label="Home">\r\n\r\n       <group id="grpClose" label="Close" >\r\n          <button idMso="FileExit"\r\n              label="Exit Database" \r\n              imageMso="MasterViewClose" \r\n              size="large" />\r\n       </group>\r\n\r\n       <group id="grpSort" label="Sort" >\r\n           <button idMso="SortUp"\r\n              size="large"/>\r\n\r\n            <button idMso="SortDown"\r\n              size="large"/>\r\n\r\n            <button idMso="SortRemoveAllSorts" \r\n               size="large" />\r\n       </group>\r\n\r\n       <group id="grpFilter" label="Filter" >\r\n          <toggleButton idMso="FilterMenu"  \r\n              size="large"/>\r\n\r\n          <button idMso="FilterClearAllFilters"  \r\n              size="large"/>\r\n       </group>\r\n\r\n       <group id="grpReport" label="Reports" >\r\n          <button id="cmdViewReport" \r\n             label="View Detail Report" \r\n            size="large" \r\n            imageMso="ViewsReportView" \r\n            onAction="Ribbon.OpenDetailReport"/>\r\n       </group>\r\n   </tab>\r\n\r\n   <tab id="tabSystem" label="System">\r\n       <group id="grpTables" label="Database Tools" >\r\n            <button idMso="DatabaseLinedTableManager"\r\n               size="large" />\r\n\r\n            <button idMso="FileDatabaseProperties"\r\n               size="large" />\r\n       </group>\r\n\r\n       <group id="grpInfo" label="Information" >\r\n            <button id="cmdOpenAbout"\r\n               label="About" \r\n               size="large" \r\n               imageMso="CreateFormBlankForm" \r\n              onAction="Ribbon.OpenAboutForm"/>\r\n       </group>\r\n   </tab>\r\n\r\n  </tabs>\r\n </ribbon>\r\n</customUI>',  # noqa: E501
+            ],
+            "RibbonNotes": [None, None],
+        },
+        schema={
+            "RibbonId": pl.Int64,
+            "RibbonName": pl.String,
+            "RibbonXML": pl.String,
+            "RibbonNotes": pl.String,
+        },
+    )
+    assert_frame_equal(df, df_expected)
+    assert df.schema == df_expected.schema
