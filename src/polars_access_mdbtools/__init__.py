@@ -6,6 +6,7 @@ import os
 import re
 import subprocess
 import warnings
+from collections.abc import Sequence
 from pathlib import Path
 
 import polars as pl
@@ -192,6 +193,7 @@ def read_table(
     table_name: str,
     *,
     implicit_string: bool = True,
+    null_values: Sequence[str] = (),
 ) -> pl.DataFrame:
     """Read a MS Access database as a Polars DataFrame.
 
@@ -199,6 +201,7 @@ def read_table(
     :param table_name: The name of the table to process.
     :param implicit_string: If True, mark strings and unknown datatypes as `pl.String`.
         Otherwise, raise an error on unhandled SQL data types.
+    :param null_values: Additional string values to treat as nulls.
     :return: a `pl.DataFrame`
     """
     mdb_schema = _read_table_mdb_schema(db_path, table_name)
@@ -262,6 +265,11 @@ def read_table(
             df = pl.read_csv(
                 csv_io,
                 schema=pl_schema_read,
+                null_values=[
+                    "1900-01-00T00:00:00",  # Insane datetime value.
+                    "1900-01-00",  # Insane date value.
+                    *null_values,
+                ],
             )
 
     # Convert binary columns to hex.
