@@ -5,7 +5,7 @@ A library for reading tables from an Access database into Polars dataframes, usi
 
 A tiny, `subprocess`-based tool for reading a 
 [MS Access](https://products.office.com/en-us/access) 
-database (`.rdb` or `.accdb`) as a [Python Polars Dataframe](https://docs.pola.rs).
+database (`.mdb`, `.accdb`, `.rdb`) as a [Python Polars Dataframe](https://docs.pola.rs).
 
 ## Installation
 

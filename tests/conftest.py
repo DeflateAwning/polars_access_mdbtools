@@ -43,3 +43,26 @@ def sample_db_1() -> Iterator[Path]:
 
         yield db_path  # Provide file path to test.
         # Tempdir automatically cleaned up on exit.
+
+
+@pytest.fixture
+def sample_db_2() -> Iterator[Path]:
+    """Give another sample access database file for tests.
+
+    Download the Access Sample .mdb file to a temporary directory,
+    yield its path for tests, and delete it afterward.
+    """
+    url = "https://github.com/el3um4s/mdbtools/raw/refs/heads/main/src/__tests__/test%202.mdb"
+    with tempfile.TemporaryDirectory() as temp_dir_str:
+        db_path = Path(temp_dir_str) / "file_example_MDB_250kB.mdb"
+        response = requests.get(url, stream=True, timeout=10)
+        response.raise_for_status()
+
+        db_path.write_bytes(response.content)
+        assert (
+            _sha256_checksum(db_path)
+            == "560bfd44ad5a6efbab4c86622c92a7071eda9d73c3b453e4bba227d82d725fec"
+        ), "Downloaded file checksum does not match expected value."
+
+        yield db_path  # Provide file path to test.
+        # Tempdir automatically cleaned up on exit.

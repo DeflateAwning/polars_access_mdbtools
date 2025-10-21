@@ -21,3 +21,16 @@ def test_list_table_names_db_1(sample_db_1: Path) -> None:
         "tblFileList",
         "USysRibbons",
     ]
+
+
+def test_list_table_names_db_2(sample_db_2: Path) -> None:
+    table_names = list_table_names(sample_db_2)
+    assert isinstance(table_names, list)
+    assert table_names == [
+        "Colors",
+        "Colors Table Two",
+        "Colors-Table Others",
+        "Dictionary",
+        "Users",
+        "Colors 1°à",
+    ]

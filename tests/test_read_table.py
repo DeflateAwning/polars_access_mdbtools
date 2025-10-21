@@ -62,4 +62,30 @@ def test_reading_specific_table_1a(sample_db_1: Path) -> None:
         },
     )
     assert_frame_equal(df, df_expected)
-    assert df.schema == df_expected.schema
+
+
+def test_reading_specific_table_2a(sample_db_2: Path) -> None:
+    """Test reading a specific table and checking its schema.
+
+    Table contains string columns with non-ASCII characters.
+    """
+    df = read_table(sample_db_2, table_name="Colors-Table Others")
+
+    df_expected = pl.DataFrame(
+        [
+            {"Colors": "Red", "Value": 10, "Second Value": 5, "Others-A": "à"},
+            {"Colors": "Green", "Value": 5, "Second Value": 3, "Others-A": "1a"},
+            {"Colors": "Blue", "Value": 16, "Second Value": 4, "Others-A": "ò"},
+            {"Colors": "Black", "Value": 1, "Second Value": 3, "Others-A": "2°"},
+            {"Colors": "Yellow", "Value": 12, "Second Value": 3, "Others-A": "Y"},
+            {"Colors": "White", "Value": 10, "Second Value": 1, "Others-A": "W"},
+            {"Colors": "Others", "Value": 0, "Second Value": 0, "Others-A": "A"},
+        ],
+        schema={
+            "Colors": pl.String,
+            "Value": pl.Int64,
+            "Second Value": pl.Int64,
+            "Others-A": pl.String,
+        },
+    )
+    assert_frame_equal(df, df_expected)
