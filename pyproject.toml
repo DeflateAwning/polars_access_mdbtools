@@ -35,6 +35,14 @@ dev = [
 # Windows `/bin/windows/` is always present (executables stored in version control).
 # Mac/Linux `/bin/macos/` or `/bin/linux/` all get built in the GitHub Actions workflow.
 include = ["src/polars_access_mdbtools/**"]
+# Mark as non-pure so each OS gets its own wheel tag (manylinux, macos, etc.).
+pure-python = false
+
+[tool.hatch.build.targets.sdist]
+include = ["src/polars_access_mdbtools/**", "build_mdbtools.py", "README.md", "LICENSE"]
+
+[tool.hatch.metadata]
+allow-direct-references = true
 
 # This build script is called in the GitHub Actions workflow to build mdbtools.
 # [tool.hatch.build.hooks.custom]
