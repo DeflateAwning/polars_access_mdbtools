@@ -12,6 +12,10 @@ from pathlib import Path
 import polars as pl
 from polars._typing import PolarsDataType
 
+VERSION = "0.1.3"
+__VERSION__ = VERSION
+__version__ = VERSION
+
 CREATE_TABLE_RE = re.compile(
     r"CREATE TABLE \[([^]]+)\]\s+\((.*?\));",
     re.MULTILINE | re.DOTALL,
